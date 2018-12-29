@@ -259,8 +259,8 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
     lastBlock = firstChain.Mine(13440, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
     BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit), 0);
 
-    // Mine 13440 more blocks at the old time, and check that CBV isn't setting the bit yet.
-    for (int i=1; i<=13440; i++) {
+    // Mine 13440-5 more blocks at the old time, and check that CBV isn't setting the bit yet.
+    for (int i=1; i<=13440-5; i++) {
         lastBlock = firstChain.Mine(13440+i, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
         // This works because VERSIONBITS_LAST_OLD_BLOCK_VERSION happens
         // to be 4, and the bit we're testing happens to be bit 28.
@@ -269,13 +269,13 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
     // Now mine 5 more blocks at the start time -- MTP should not have passed yet, so
     // CBV should still not yet set the bit.
     nTime = nStartTime;
-    for (int i=13435; i<=13440; i++) {
+    for (int i=13440-4; i<=13440; i++) {
         lastBlock = firstChain.Mine(13440+i, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
         BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit), 0);
     }
 
     // Advance to the next period and transition to STARTED,
-    lastBlock = firstChain.Mine(13440+13440+5+13435, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+    lastBlock = firstChain.Mine(13440*3, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
     // so ComputeBlockVersion should now set the bit,
     BOOST_CHECK((ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit)) != 0);
     // and should also be using the VERSIONBITS_TOP_BITS.
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
     // Check that ComputeBlockVersion will set the bit until nTimeout
     nTime += 90;
     int blocksToMine = 13440*2; // test blocks for up to 2 time periods
-    int nHeight = 13440+13440+5+13435;
+    int nHeight = 13440*3;
     // These blocks are all before nTimeout is reached.
     while (nTime < nTimeout && blocksToMine > 0) {
         lastBlock = firstChain.Mine(nHeight+1, nTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
@@ -318,16 +318,16 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
     BOOST_CHECK((ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit)) != 0);
 
     // Mine another period worth of blocks, signaling the new bit.
-    lastBlock = secondChain.Mine(13440+13440, nStartTime, VERSIONBITS_TOP_BITS | (1<<bit)).Tip();
+    lastBlock = secondChain.Mine(13440*2, nStartTime, VERSIONBITS_TOP_BITS | (1<<bit)).Tip();
     // After one period of setting the bit on each block, it should have locked in.
     // We keep setting the bit for one more period though, until activation.
     BOOST_CHECK((ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit)) != 0);
 
     // Now check that we keep mining the block until the end of this period, and
     // then stop at the beginning of the next period.
-    lastBlock = secondChain.Mine(13440+13440+13440-1, nStartTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+    lastBlock = secondChain.Mine((13440*3)-1, nStartTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
     BOOST_CHECK((ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit)) != 0);
-    lastBlock = secondChain.Mine(13440+13440+13440, nStartTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
+    lastBlock = secondChain.Mine(13440*3, nStartTime, VERSIONBITS_LAST_OLD_BLOCK_VERSION).Tip();
     BOOST_CHECK_EQUAL(ComputeBlockVersion(lastBlock, mainnetParams) & (1<<bit), 0);
 
     // Finally, verify that after a soft fork has activated, CBV no longer uses
