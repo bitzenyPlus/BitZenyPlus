@@ -128,7 +128,6 @@ public:
         // vSeeds.emplace_back("bitzeny.seed.lapool.me", false); // not working
         // vSeeds.emplace_back("seed.bitzeny.jp", false); // seems strange
         vSeeds.emplace_back("zny.seed.fujishan.jp", true);
-        
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,81);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
